@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ziyad Abouelenin — Robotics Ph.D. Candidate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:       #080c12;
+      --surface:  #0d1420;
+      --surface2: #131c2b;
+      --border:   rgba(255,255,255,0.07);
+      --text:     #e8edf5;
+      --muted:    #5a6a82;
+      --accent:   #f0a500;
+      --accent2:  #00c9a7;
+      --mono:     'DM Mono', monospace;
+      --display:  'Syne', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--display);
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Cursor */
+    #cursor {
+      position: fixed; width: 12px; height: 12px;
+      border: 1.5px solid var(--accent); border-radius: 50%;
+      pointer-events: none; z-index: 9999;
+      transform: translate(-50%,-50%);
+      transition: width .2s, height .2s, background .2s;
+    }
+    #cursor-trail {
+      position: fixed; width: 36px; height: 36px;
+      border: 1px solid rgba(240,165,0,0.2); border-radius: 50%;
+      pointer-events: none; z-index: 9998;
+      transform: translate(-50%,-50%);
+      transition: left .12s ease-out, top .12s ease-out;
+    }
+
+    /* Noise */
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      pointer-events: none; z-index: 1000; opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* Grid bg */
+    body::after {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+    }
+
+    /* Nav */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 48px;
+      background: linear-gradient(to bottom, rgba(8,12,18,0.95), transparent);
+      backdrop-filter: blur(8px);
+    }
+    .nav-logo { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: 0.1em; text-decoration: none; }
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links a { font-family: var(--mono); font-size: 12px; color: var(--muted); text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+
+    section { position: relative; z-index: 1; }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: grid; grid-template-columns: 1fr 1fr;
+      padding: 120px 48px 80px; gap: 40px; align-items: center;
+    }
+    .hero-left { max-width: 580px; }
+    .hero-tag {
+      font-family: var(--mono); font-size: 11px; color: var(--accent);
+      letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 24px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .hero-tag::before { content: ''; display: block; width: 32px; height: 1px; background: var(--accent); }
+    h1 { font-size: clamp(48px, 6vw, 88px); font-weight: 800; line-height: 0.95; letter-spacing: -0.03em; margin-bottom: 32px; }
+    h1 .accent-line { color: var(--accent); display: block; }
+    .hero-desc { font-family: var(--mono); font-size: 14px; color: var(--muted); line-height: 1.8; max-width: 440px; margin-bottom: 48px; }
+    .hero-desc strong { color: var(--text); }
+    .hero-cta { display: flex; gap: 16px; flex-wrap: wrap; }
+    .btn { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; padding: 14px 28px; border-radius: 3px; text-decoration: none; transition: all .2s; cursor: none; }
+    .btn-primary { background: var(--accent); color: #080c12; border: 1px solid var(--accent); font-weight: 500; }
+    .btn-primary:hover { background: transparent; color: var(--accent); }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--text); }
+
+    /* Terminal */
+    .hero-terminal {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      overflow: hidden; font-family: var(--mono); font-size: 13px;
+      max-width: 480px; justify-self: end; width: 100%;
+      animation: fadeUp .8s .4s both;
+    }
+    .terminal-bar {
+      background: var(--surface2); padding: 12px 16px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+    .terminal-title { font-size: 11px; color: var(--muted); margin: 0 auto; }
+    .terminal-body { padding: 20px 20px 24px; line-height: 2; }
+    .t-prompt { color: var(--accent2); } .t-cmd { color: var(--text); }
+    .t-out { color: var(--muted); padding-left: 16px; display: block; }
+    .t-key { color: var(--accent); } .t-val { color: var(--text); }
+    .t-cursor { display: inline-block; width: 8px; height: 14px; background: var(--accent); vertical-align: middle; animation: blink 1s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* Status bar */
+    .status-bar {
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      padding: 14px 48px; display: flex; gap: 48px; align-items: center;
+      font-family: var(--mono); font-size: 11px; color: var(--muted);
+      overflow-x: auto; background: var(--surface);
+    }
+    .status-item { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); flex-shrink: 0; }
+    .sdot.y { background: var(--accent); }
+
+    /* ── ABOUT ── */
+    #about { padding: 120px 48px; display: grid; grid-template-columns: 200px 1fr; gap: 80px; max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-family: var(--mono); font-size: 11px; color: var(--accent);
+      letter-spacing: 0.2em; text-transform: uppercase;
+      writing-mode: vertical-rl; transform: rotate(180deg);
+      height: fit-content; align-self: start; margin-top: 8px;
+    }
+    .about-content h2 { font-size: clamp(32px, 4vw, 52px); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 32px; }
+    .about-content p { font-family: var(--mono); font-size: 14px; color: var(--muted); line-height: 1.9; max-width: 620px; margin-bottom: 20px; }
+    .about-content p strong { color: var(--text); }
+    .skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 40px; }
+    .skill-chip {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+      padding: 10px 14px; font-family: var(--mono); font-size: 12px; color: var(--muted);
+      display: flex; align-items: center; gap: 8px; transition: border-color .2s, color .2s;
+    }
+    .skill-chip:hover { border-color: var(--accent); color: var(--text); }
+    .skill-chip::before { content: '//'; color: var(--accent); font-size: 10px; }
+
+    /* ── EXPERIENCE ── */
+    #experience { padding: 120px 48px; background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .exp-inner { max-width: 1100px; margin: 0 auto; }
+    .exp-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 64px; }
+    .exp-header h2 { font-size: clamp(32px, 4vw, 52px); font-weight: 700; letter-spacing: -0.02em; }
+    .exp-header span { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+    .timeline { position: relative; }
+    .timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: var(--border); }
+    .exp-item {
+      display: grid; grid-template-columns: 220px 1fr; gap: 40px;
+      padding: 36px 0 36px 40px; border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .exp-item::before {
+      content: ''; position: absolute; left: -4px; top: 44px;
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--bg); border: 1.5px solid var(--accent);
+    }
+    .exp-date { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-bottom: 6px; letter-spacing: 0.08em; }
+    .exp-org { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .exp-body h3 { font-size: 20px; font-weight: 600; margin-bottom: 12px; letter-spacing: -0.01em; }
+    .exp-body p, .exp-body li { font-family: var(--mono); font-size: 13px; color: var(--muted); line-height: 1.8; }
+    .exp-body ul { padding-left: 16px; margin-top: 8px; }
+    .exp-body li { margin-bottom: 4px; }
+    .exp-body li::marker { color: var(--accent); }
+    .exp-tag {
+      display: inline-block; background: rgba(240,165,0,0.1);
+      border: 1px solid rgba(240,165,0,0.2); color: var(--accent);
+      font-family: var(--mono); font-size: 10px; padding: 3px 8px;
+      border-radius: 2px; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 12px;
+    }
+
+    /* ── PROJECTS ── */
+    #projects { padding: 120px 48px; max-width: 1100px; margin: 0 auto; }
+    .projects-header { margin-bottom: 64px; }
+    .projects-header h2 { font-size: clamp(32px, 4vw, 52px); font-weight: 700; letter-spacing: -0.02em; }
+    .projects-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .proj-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+      padding: 32px; position: relative; overflow: hidden;
+      transition: border-color .3s, transform .3s; cursor: none;
+    }
+    .proj-card:hover { border-color: rgba(240,165,0,0.4); transform: translateY(-2px); }
+    .proj-card::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(240,165,0,0.05), transparent 60%);
+    }
+    .proj-card.large { grid-column: span 7; }
+    .proj-card.small { grid-column: span 5; }
+    .proj-card.med   { grid-column: span 6; }
+    .proj-num { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 20px; letter-spacing: 0.15em; }
+    .proj-card h3 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 12px; }
+    .proj-card p { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.8; }
+    .proj-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px; }
+    .proj-tag { font-family: var(--mono); font-size: 10px; color: var(--muted); border: 1px solid var(--border); padding: 3px 8px; border-radius: 2px; }
+
+    /* ── PUBLICATIONS ── */
+    #publications { padding: 120px 48px; background: var(--surface); border-top: 1px solid var(--border); }
+    .pub-inner { max-width: 1100px; margin: 0 auto; }
+    .pub-inner h2 { font-size: clamp(32px, 4vw, 52px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 48px; }
+    .pub-item { display: grid; grid-template-columns: 80px 1fr; gap: 32px; padding: 32px 0; border-bottom: 1px solid var(--border); }
+    .pub-year { font-family: var(--mono); font-size: 12px; color: var(--accent); padding-top: 4px; }
+    .pub-body h4 { font-size: 17px; font-weight: 600; margin-bottom: 8px; line-height: 1.4; }
+    .pub-body p { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.7; }
+    .pub-venue { display: inline-block; margin-top: 10px; font-family: var(--mono); font-size: 10px; color: var(--accent2); border: 1px solid rgba(0,201,167,0.25); padding: 3px 8px; border-radius: 2px; letter-spacing: 0.08em; }
+
+    /* ── CONFERENCES ── */
+    #conferences { padding: 80px 48px 120px; max-width: 1100px; margin: 0 auto; }
+    #conferences h2 { font-size: clamp(28px, 3vw, 42px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 40px; }
+    .conf-list { display: flex; flex-direction: column; gap: 16px; }
+    .conf-item {
+      display: grid; grid-template-columns: 120px 1fr auto; align-items: start; gap: 24px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+      padding: 20px 24px; transition: border-color .2s;
+    }
+    .conf-item:hover { border-color: rgba(240,165,0,0.3); }
+    .conf-year { font-family: var(--mono); font-size: 12px; color: var(--accent); padding-top: 2px; }
+    .conf-title { font-family: var(--mono); font-size: 13px; color: var(--text); line-height: 1.6; }
+    .conf-venue { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: right; padding-top: 2px; white-space: nowrap; }
+
+    /* ── CONTACT ── */
+    #contact { padding: 120px 48px; border-top: 1px solid var(--border); text-align: center; position: relative; overflow: hidden; }
+    #contact::before {
+      content: ''; position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(240,165,0,0.06) 0%, transparent 70%);
+      top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none;
+    }
+    #contact h2 { font-size: clamp(36px, 5vw, 72px); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 20px; }
+    #contact p { font-family: var(--mono); font-size: 14px; color: var(--muted); max-width: 480px; margin: 0 auto 48px; line-height: 1.8; }
+    .contact-links { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+    .contact-link {
+      font-family: var(--mono); font-size: 12px; color: var(--muted); text-decoration: none;
+      border: 1px solid var(--border); padding: 12px 24px; border-radius: 3px;
+      letter-spacing: 0.08em; transition: all .2s; display: flex; align-items: center; gap: 8px;
+    }
+    .contact-link:hover { color: var(--accent); border-color: var(--accent); }
+    .contact-link svg { width: 14px; height: 14px; fill: currentColor; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 24px 48px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: var(--mono); font-size: 11px; color: var(--muted);
+    }
+
+    /* Animations */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp .7s both; }
+    .delay-1 { animation-delay: .1s; } .delay-2 { animation-delay: .2s; }
+    .delay-3 { animation-delay: .3s; } .delay-4 { animation-delay: .4s; }
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      nav { padding: 16px 24px; }
+      .nav-links { display: none; }
+      #hero { grid-template-columns: 1fr; padding: 100px 24px 60px; }
+      .hero-terminal { justify-self: start; max-width: 100%; }
+      #about { grid-template-columns: 1fr; padding: 80px 24px; gap: 32px; }
+      .section-label { writing-mode: horizontal-tb; transform: none; }
+      #experience, #publications { padding: 80px 24px; }
+      #projects, #conferences, #contact { padding: 80px 24px; }
+      .exp-item { grid-template-columns: 1fr; gap: 8px; padding-left: 28px; }
+      .proj-card.large, .proj-card.small, .proj-card.med { grid-column: span 12; }
+      .conf-item { grid-template-columns: 1fr; gap: 8px; }
+      .conf-venue { text-align: left; }
+      footer { flex-direction: column; gap: 8px; text-align: center; padding: 24px; }
+      .status-bar { padding: 12px 24px; gap: 24px; }
+      body { cursor: auto; }
+      #cursor, #cursor-trail { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="cursor"></div>
+  <div id="cursor-trail"></div>
+
+  <nav>
+    <a href="#" class="nav-logo">ZA // INIT</a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#publications">Publications</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-left">
+      <div class="hero-tag fade-up">Ph.D. Candidate · NSF-NRT Fellow · Rutgers University</div>
+      <h1 class="fade-up delay-1">
+        Ziyad
+        <span class="accent-line">Abouelenin</span>
+      </h1>
+      <p class="hero-desc fade-up delay-2">
+        Robotics researcher specializing in <strong>real-time hybrid force-position control</strong>,
+        dynamic parameter identification, and simulation of serial manipulators.
+        Building the bridge between algorithm and hardware.
+      </p>
+      <div class="hero-cta fade-up delay-3">
+        <a href="#experience" class="btn btn-primary">View Experience</a>
+        <a href="mailto:ziyad.abouelenin@gmail.com" class="btn btn-outline">Get in Touch</a>
+      </div>
+    </div>
+
+    <div class="hero-terminal">
+      <div class="terminal-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="terminal-title">ziyad@rutgers ~ zsh</span>
+      </div>
+      <div class="terminal-body">
+        <div><span class="t-prompt">❯ </span><span class="t-cmd">whoami --verbose</span></div>
+        <span class="t-out"><span class="t-key">name</span>      : <span class="t-val">Ziyad Abouelenin</span></span>
+        <span class="t-out"><span class="t-key">role</span>      : <span class="t-val">Robotics Ph.D. Candidate</span></span>
+        <span class="t-out"><span class="t-key">affil</span>     : <span class="t-val">Rutgers University, NJ</span></span>
+        <span class="t-out"><span class="t-key">fellowship</span>: <span class="t-val">NSF-NRT (SOCRATES)</span></span>
+        <span class="t-out"><span class="t-key">defense</span>   : <span class="t-val">Aug 2026 (expected)</span></span>
+        <br>
+        <div><span class="t-prompt">❯ </span><span class="t-cmd">cat focus.txt</span></div>
+        <span class="t-out">· Hybrid Force-Position Control</span>
+        <span class="t-out">· Dynamic Parameter Identification</span>
+        <span class="t-out">· Robot Manipulator Simulation</span>
+        <span class="t-out">· Motor Hysteresis Modeling</span>
+        <br>
+        <div><span class="t-prompt">❯ </span><span class="t-cursor"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-item"><span class="sdot"></span> Currently: Rutgers Ph.D. Research</div>
+    <div class="status-item"><span class="sdot y"></span> NASA Alum — Marshall Space Flight Center</div>
+    <div class="status-item"><span class="sdot"></span> 2 IEEE / Springer Publications</div>
+    <div class="status-item"><span class="sdot y"></span> 5 Conferences & Presentations</div>
+    <div class="status-item"><span class="sdot"></span> Python · C++ · ROS · MATLAB</div>
+    <div class="status-item"><span class="sdot y"></span> English & Arabic — Native</div>
+  </div>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <span class="section-label reveal">About</span>
+    <div class="about-content">
+      <h2 class="reveal">Systems thinker.<br>Hardware builder.</h2>
+      <p class="reveal">
+        I'm a Ph.D. candidate at Rutgers University's <strong>Lab for Machines, Manufacturing & Mechatronics</strong>,
+        developing real-time control algorithms for robotic manipulators. My work sits at the intersection of
+        mechanical design, electronics, and control software — building reliable, high-performance robots from the ground up.
+      </p>
+      <p class="reveal">
+        Before Rutgers, I interned at <strong>NASA Marshall Space Flight Center</strong> developing vibration-isolation
+        models for aerospace composites, and worked as an automation engineer at Panacea Technologies where a Python
+        tool I built reduced development time by <strong>95%</strong>. I hold a B.Sc. in Mechatronics from
+        <strong>The German University in Cairo</strong> and have conducted research at NYU Tandon and Stevens Institute.
+      </p>
+      <p class="reveal">
+        Outside of research I build things that ship — including <strong>Rusookh (رسوخ)</strong>,
+        a Quran memorization tracker PWA I designed and built from scratch.
+      </p>
+      <div class="skills-grid reveal">
+        <div class="skill-chip">Python</div>
+        <div class="skill-chip">C++</div>
+        <div class="skill-chip">MATLAB / Simulink</div>
+        <div class="skill-chip">ROS / Gazebo</div>
+        <div class="skill-chip">Force-Position Control</div>
+        <div class="skill-chip">Kinematics</div>
+        <div class="skill-chip">Dynamic Param. ID</div>
+        <div class="skill-chip">Motor Hysteresis</div>
+        <div class="skill-chip">SolidWorks</div>
+        <div class="skill-chip">Fusion 360</div>
+        <div class="skill-chip">3D Printing</div>
+        <div class="skill-chip">Machine Learning</div>
+        <div class="skill-chip">Modal Analysis</div>
+        <div class="skill-chip">DMA / Vibration</div>
+        <div class="skill-chip">Linux / Git</div>
+        <div class="skill-chip">Arduino</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section id="experience">
+    <div class="exp-inner">
+      <div class="exp-header reveal">
+        <h2>Experience</h2>
+        <span>// Career Timeline</span>
+      </div>
+      <div class="timeline">
+
+        <div class="exp-item reveal">
+          <div>
+            <div class="exp-date">Sep 2024 — Present</div>
+            <div class="exp-org">Rutgers University</div>
+          </div>
+          <div class="exp-body">
+            <h3>NSF-NRT Graduate Fellow</h3>
+            <p>SOCRATES Program — Socially Cognizant Robotics for a Technology Enhanced Society. Graduate training integrating robotics with social and behavioral sciences: psychology, cognitive science, and urban policy planning.</p>
+            <span class="exp-tag">Active</span>
+          </div>
+        </div>
+
+        <div class="exp-item reveal">
+          <div>
+            <div class="exp-date">Sep 2022 — Sep 2024</div>
+            <div class="exp-org">Rutgers University</div>
+          </div>
+          <div class="exp-body">
+            <h3>Graduate Research Assistant — RM3</h3>
+            <p>Lab for Machines, Manufacturing & Mechatronics. Developed real-time hybrid force-position control algorithms and simulation models for serial manipulators with dynamic parameter identification and motor hysteresis modeling.</p>
+            <ul>
+              <li>Paper-based electrochemical biosensors via additive manufacturing</li>
+              <li>Vibration isolation using carbon fiber-silicone composites</li>
+              <li>Mentored M.S. and B.S. students; contributed to 2 conference presentations</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="exp-item reveal">
+          <div>
+            <div class="exp-date">Jan 2022 — Aug 2022</div>
+            <div class="exp-org">NASA — MSFC</div>
+          </div>
+          <div class="exp-body">
+            <h3>Disruptive Modal Development Intern</h3>
+            <p>Structural Design & Analysis — Marshall Space Flight Center. Developed numerical vibration-isolation models for composite structures enabling higher-fidelity damping prediction in aerospace environments.</p>
+            <ul>
+              <li>Characterized viscoelastic properties of carbon fiber-silicone composites via DMA</li>
+              <li>Informed material selection for in-space manufacturing applications</li>
+            </ul>
+            <span class="exp-tag">NASA // MSFC</span>
+          </div>
+        </div>
+
+        <div class="exp-item reveal">
+          <div>
+            <div class="exp-date">Sep 2020 — Aug 2021</div>
+            <div class="exp-org">Panacea Technologies Inc.</div>
+          </div>
+          <div class="exp-body">
+            <h3>Automation Validation Engineer</h3>
+            <p>Montgomeryville, PA. Built a Python application auto-generating UDTs and tags for Ignition platforms — cutting development time by 95%.</p>
+            <ul>
+              <li>Designed and validated HMIs across DeltaV, Wonderware ArchestrA, and Ignition</li>
+              <li>Led integration and verification protocols for large-scale Process Control Systems</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="exp-item reveal">
+          <div>
+            <div class="exp-date">Jan 2020 — Jul 2020</div>
+            <div class="exp-org">Stevens Institute of Technology</div>
+          </div>
+          <div class="exp-body">
+            <h3>Robotics Researcher</h3>
+            <p>Modeled the CrazyFlie 2.1 micro-aerial vehicle in Gazebo with high-fidelity CAD. Implemented a geometric controller achieving stable autonomous flight in simulation with verified closed-loop stability and attitude tracking.</p>
+          </div>
+        </div>
+
+        <div class="exp-item reveal">
+          <div>
+            <div class="exp-date">Feb 2018 — Jul 2018</div>
+            <div class="exp-org">NYU Tandon — MCR Lab</div>
+          </div>
+          <div class="exp-body">
+            <h3>Robotics Researcher</h3>
+            <p>Mechatronics, Controls & Robotics Laboratory. Designed and built a compact active prosthetic hand. Applied supervised ML for EMG-based hand gesture classification — results published at IEEE SPMB 2018.</p>
+            <ul>
+              <li>Presented at NYU Research Expo 2018</li>
+              <li>Developed Python application for stroke patient rehabilitation</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="projects-header reveal">
+      <h2>Selected Projects</h2>
+    </div>
+    <div class="projects-grid">
+
+      <div class="proj-card large reveal">
+        <div class="proj-num">01 // RUTGERS · NASA · 2021–2023</div>
+        <h3>Viscoelastic Vibration Isolation</h3>
+        <p>Fabricated novel carbon fiber-silicone composite materials for passive vibration isolation in aerospace environments. Performed Dynamic Mechanical Analysis to derive accurate viscoelastic constitutive models for numerical simulation.</p>
+        <div class="proj-tags">
+          <span class="proj-tag">DMA</span><span class="proj-tag">MATLAB</span>
+          <span class="proj-tag">Composites</span><span class="proj-tag">NASA</span>
+          <span class="proj-tag">IMECE 2022–23</span>
+        </div>
+      </div>
+
+      <div class="proj-card small reveal delay-1">
+        <div class="proj-num">02 // RUTGERS · 2021–2024</div>
+        <h3>Paper-Based Biosensors</h3>
+        <p>Engineered paper-based biosensors using additive manufacturing for low-cost diagnostics. Optimized electrode configuration for electrochemical impedance sensing of small proteins.</p>
+        <div class="proj-tags">
+          <span class="proj-tag">Additive Mfg.</span>
+          <span class="proj-tag">Electrochemistry</span>
+          <span class="proj-tag">IMECE 2023</span>
+        </div>
+      </div>
+
+      <div class="proj-card med reveal">
+        <div class="proj-num">03 // RUTGERS · 2025</div>
+        <h3>DermAssist — Robotic Wound Care</h3>
+        <p>Robotic arm system for gentle and precise bandage removal. Combines force-sensing with trajectory control for safe human-robot interaction in a medical context. Presented at Rutgers Robotics Workshop 2025.</p>
+        <div class="proj-tags">
+          <span class="proj-tag">Force Control</span>
+          <span class="proj-tag">ROS</span>
+          <span class="proj-tag">Medical Robotics</span>
+        </div>
+      </div>
+
+      <div class="proj-card med reveal delay-1">
+        <div class="proj-num">04 // NYU · 2018</div>
+        <h3>Active Prosthetic Hand</h3>
+        <p>Designed and built a compact active prosthetic hand. Trained supervised ML models on EMG signals for real-time hand gesture classification. Results published at IEEE SPMB 2018 and Springer 2020.</p>
+        <div class="proj-tags">
+          <span class="proj-tag">EMG Sensing</span>
+          <span class="proj-tag">Machine Learning</span>
+          <span class="proj-tag">IEEE Published</span>
+        </div>
+      </div>
+
+      <div class="proj-card small reveal">
+        <div class="proj-num">05 // STEVENS · 2020</div>
+        <h3>CrazyFlie MAV Simulation</h3>
+        <p>High-fidelity CAD model and Gazebo simulation of the CrazyFlie 2.1 micro-aerial vehicle. Geometric controller for stable autonomous flight with trajectory planning and attitude tracking validation.</p>
+        <div class="proj-tags">
+          <span class="proj-tag">ROS/Gazebo</span>
+          <span class="proj-tag">Geometric Control</span>
+          <span class="proj-tag">SolidWorks</span>
+        </div>
+      </div>
+
+      <div class="proj-card large reveal delay-1">
+        <div class="proj-num">06 // PERSONAL PROJECT</div>
+        <h3>Rusookh — رسوخ</h3>
+        <p>A full-featured Quran memorization tracker PWA built from scratch. Smart daily revision plan, streak tracking, Hijri/Gregorian dual calendar, offline support via service worker, bilingual Arabic/English with full RTL layout, bulk edit mode, Quran audio playback API, and export/import. Designed, engineered, and shipped solo.</p>
+        <div class="proj-tags">
+          <span class="proj-tag">Vanilla JS</span><span class="proj-tag">PWA</span>
+          <span class="proj-tag">Arabic RTL</span><span class="proj-tag">Service Worker</span>
+          <span class="proj-tag">Offline-First</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PUBLICATIONS -->
+  <section id="publications">
+    <div class="pub-inner">
+      <h2 class="reveal">Publications</h2>
+
+      <div class="pub-item reveal">
+        <div class="pub-year">2020</div>
+        <div class="pub-body">
+          <h4>Gaussian Smoothing Filter for Improved EMG Signal Modeling</h4>
+          <p>Ghalyan, I.F., Abouelenin, Z.M., Annamalai, G., & Kapila, V.</p>
+          <span class="pub-venue">Signal Processing in Medicine and Biology · Springer, Cham · p. 161–204</span>
+        </div>
+      </div>
+
+      <div class="pub-item reveal">
+        <div class="pub-year">2018</div>
+        <div class="pub-body">
+          <h4>Gaussian Filtering of EMG Signals for Improved Hand Gesture Classification</h4>
+          <p>Ghalyan, I.F., Abouelenin, Z.M., & Kapila, V.</p>
+          <span class="pub-venue">IEEE Signal Processing in Medicine and Biology (SPMB) Symposium</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONFERENCES -->
+  <section id="conferences">
+    <h2 class="reveal">Conferences & Presentations</h2>
+    <div class="conf-list">
+      <div class="conf-item reveal">
+        <div class="conf-year">2025</div>
+        <div class="conf-title">"DermAssist: Towards Robotic Wound Care Management – A Robotic Arm System for Gentle and Precise Bandage Removal."</div>
+        <div class="conf-venue">Rutgers Robotics Workshop</div>
+      </div>
+      <div class="conf-item reveal">
+        <div class="conf-year">2024</div>
+        <div class="conf-title">"Toward Wearable Sensors for Measuring Protein-Based Indicators of Stress and Awareness."</div>
+        <div class="conf-venue">NSF-NRT Annual Meeting</div>
+      </div>
+      <div class="conf-item reveal">
+        <div class="conf-year">2023</div>
+        <div class="conf-title">"Graphene- and Paper-Based Biosensors for Small Protein Detection."</div>
+        <div class="conf-venue">IMECE 2023</div>
+      </div>
+      <div class="conf-item reveal">
+        <div class="conf-year">2023</div>
+        <div class="conf-title">"Construction, Analysis, and Verification of a 3D-Printed Carbon Fiber-Silicone Composite System for Vibration Isolation."</div>
+        <div class="conf-venue">IMECE 2023</div>
+      </div>
+      <div class="conf-item reveal">
+        <div class="conf-year">2022</div>
+        <div class="conf-title">"Tunable 3D Printed Damper for In-Space Additive Manufacturing."</div>
+        <div class="conf-venue">IMECE 2022</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <h2 class="reveal">Let's Build<br><span style="color:var(--accent)">Something.</span></h2>
+    <p class="reveal">Open to industry robotics R&D roles starting mid-2026. Looking to bring control algorithms from simulation to hardware. I respond fast.</p>
+    <div class="contact-links reveal">
+      <a href="mailto:ziyad.abouelenin@gmail.com" class="contact-link">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        ziyad.abouelenin@gmail.com
+      </a>
+      <a href="https://linkedin.com/in/ziyadabouelenin" target="_blank" class="contact-link">
+        <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        LinkedIn
+      </a>
+      <a href="mailto:ziyad.abouelenin@rutgers.edu" class="contact-link">
+        <svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+        Rutgers Email
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <span>© 2025 Ziyad Abouelenin</span>
+    <span>Ph.D. Candidate · Rutgers University · Mechanical & Aerospace Engineering</span>
+    <span style="color:var(--accent)">// Built with care</span>
+  </footer>
+
+  <script>
+    const cursor = document.getElementById('cursor');
+    const trail  = document.getElementById('cursor-trail');
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px';
+      trail.style.left  = e.clientX + 'px'; trail.style.top  = e.clientY + 'px';
+    });
+    document.querySelectorAll('.proj-card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+        card.style.setProperty('--my', ((e.clientY - r.top)  / r.height * 100) + '%');
+      });
+    });
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  </script>
+</body>
+</html>
